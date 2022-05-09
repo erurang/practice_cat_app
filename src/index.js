@@ -26,7 +26,30 @@ getRootData();
 // ----> 컴포넌트간의 의존성 증가!! 나중에 독립적으로 컴포넌트를 사용하기 어려워짐!
 // === > 즉 두 컴포넌트를 감싸는 하나의 컴포넌트를 만들자!
 
+function App($app) {
+  this.state = {
+    isRoot: false,
+    nodes: [],
+    depth: [],
+  };
+
+  const onClick = (node) => {
+    if (node.type === "DIRECTORY") {
+    } else if (node.type === "FILE") {
+    }
+  };
+
+  const breadComp = new Breadcrumb({ $app, initialState: this.state.depth });
+  
+  const nodesComp = new Nodes({
+    $app,
+    initialState: { isRoot: this.state.isRoot, nodes: this.state.nodes },
+    onClick,
+  });
+}
+
 function Nodes({ $app, initialState, onClick }) {
+    
   // Nodes의 컴포넌트는 상태를 가지고
   this.state = initialState;
 
@@ -48,7 +71,7 @@ function Nodes({ $app, initialState, onClick }) {
   this.render = () => {
     if (this.state.nodes) {
       const nodeTemplate = this.state.nodes
-        .map((node,index) => {
+        .map((node, index) => {
           const iconPath =
             node.type === "FILE"
               ? "./assets/file.png"
@@ -62,25 +85,20 @@ function Nodes({ $app, initialState, onClick }) {
         : nodeTemplate;
     }
 
+    this.$target.querySelectorAll(".Node").forEach(($node) => {
+      console.log($node.dataset);
+      $node.addEventListener("click", (e) => {
+        const { index } = e.target.dataset;
 
-    this.$target.querySelectorAll('.Node').forEach($node => {
-        
-        console.log($node.dataset)
-        $node.addEventListener('click', (e) => {
-            const {index}= e.target.dataset
+        const selectIndex = this.state.nodes.find((node) => node.id === index);
 
-            const selectIndex = this.state.nodes.find(node => node.id === index)
-            
-            if(selectIndex) {
-                this.onClick(selectedNode)
-            }
-        })
-
-    })
-
+        if (selectIndex) {
+          this.onClick(selectedNode);
+        }
+      });
+    });
   };
 
-  
   this.render();
 }
 
@@ -106,18 +124,8 @@ function Breadcrumb({ $app, initialState }) {
               .join("")}
         `;
   };
-  
 
   this.render();
 }
 
-const $app = document.querySelector(".App");
-
-const initialState = {
-  nodes: [
-  ],
-};
-
-const onClick = () => {};
-const breadComp = new Breadcrumb({ $app, initialState});
-const nodesComp = new Nodes({ $app, initialState, onClick });
+new App(document.querySelector('.app'))
