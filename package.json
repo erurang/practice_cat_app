@@ -1,0 +1,23 @@
+{
+  "name": "practice_cat_app",
+  "version": "1.0.0",
+  "description": "https://programmers.co.kr/skill_check_assignments/100 프로그래머스 고양이 사진첩 만들기 연습",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/erurang/practice_cat_app.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/erurang/practice_cat_app/issues"
+  },
+  "homepage": "https://github.com/erurang/practice_cat_app#readme",
+  "devDependencies": {
+    "parcel": "^2.5.0",
+    "parcel-bundler": "^1.12.5"
+  }
+}
