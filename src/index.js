@@ -1,17 +1,28 @@
 // breadcrumb 에 div 자식마다 a - b - c 로 이어짐.
 // "https://fe-dev-matching-2021-03-serverlessdeploymentbuck-t3kpj3way537.s3.ap-northeast-2.amazonaws.com/public/${filePath}"
 
-async function getRootData() {
-  const data = await fetch(
-    "https://zl3m4qq0l9.execute-api.ap-northeast-2.amazonaws.com/dev/"
-  );
-  const jsonData = await data.json();
-  console.log(jsonData);
-  return await jsonData;
+const API_END_POINT =
+  "https://zl3m4qq0l9.execute-api.ap-northeast-2.amazonaws.com/dev/";
+
+async function request() {
+  // fetch로 반환되는  promise 객체는 http Error상태를 reject 해주지않기때문에. 즉 네트워크 요청에 오류가생겨도 catch에 걸리지 않는다는뜻.
+  //  response.ok로 파악해야함
+  try {
+    const data = await fetch(
+      "https://zl3m4qq0l9.execute-api.ap-northeast-2.amazonaws.com/dev/"
+    );
+
+    if (!data.ok) {
+      alert("서버에서 데이터를 받아오는데 오류가 있습니다.");
+      throw new Error(`서버의 상태가 이상함!`);
+    }
+
+    return await data.json();
+  } catch (e) {
+    alert("이상한오류!!");
+    throw new Error(`request오류! ${e}`);
+  }
 }
-
-getRootData();
-
 // 이런식으로 DOM에 직접 접근하는 방식을 명령적 프로그래밍 이라고함
 // -> 추상적이지 못하다.
 // -> 나중에 UI가 커질경우 어느지점 어느 시점에서 DOM을 업데이트 하는지 추적하는게 점점 힘들어짐
@@ -34,21 +45,50 @@ function App($app) {
   };
 
   const onClick = (node) => {
+    console.log(node)
     if (node.type === "DIRECTORY") {
+        
     } else if (node.type === "FILE") {
     }
   };
 
-  const breadComp = new Breadcrumb({ $app, initialState: this.state.depth });
-  
-  const nodesComp = new Nodes({
+  const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
+
+  const nodes = new Nodes({
     $app,
     initialState: { isRoot: this.state.isRoot, nodes: this.state.nodes },
     onClick,
   });
+
+  //app 에도 상태관리를위해 setState함수 설정
+  this.setState = (nextState) => {
+
+    this.state = nextState;
+    breadcrumb.setState(this.state.depth);
+    nodes.setState({ isRoot: this.state.isRoot, nodes : this.state.nodes});
+  };
+
+  // 초기 데이터 셋팅
+
+  this.init = async () => {
+    try {
+      const rootNodes = await request();
+
+      this.setState({
+        ...this.state,
+        isRoot: true,
+        nodes: rootNodes,
+      });
+    } catch (e) {
+      throw new Error(e);
+    }
+  };
+
+  this.init();
 }
 
 function Nodes({ $app, initialState, onClick }) {
+
     
   // Nodes의 컴포넌트는 상태를 가지고
   this.state = initialState;
@@ -69,7 +109,8 @@ function Nodes({ $app, initialState, onClick }) {
   };
 
   this.render = () => {
-    if (this.state.nodes) {
+    console.log(this.state)
+    if (this.state.nodes) {    
       const nodeTemplate = this.state.nodes
         .map((node, index) => {
           const iconPath =
@@ -128,4 +169,4 @@ function Breadcrumb({ $app, initialState }) {
   this.render();
 }
 
-new App(document.querySelector('.app'))
+new App(document.querySelector(".app"));
