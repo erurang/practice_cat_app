@@ -71,10 +71,35 @@ function App($app) {
     } catch(e) {
         throw new Error(e)
     }
-
-    
-    
   };
+
+  const onBackClick = async () => {
+      try {
+          const nextState = {...this.state}
+          nextState.depth.pop()
+
+          const prevNodeId = nextState.depth.length === 0 ? null : nextState.depth[nextState.depth-1].id
+
+          if(prevNodeId === null) {
+              const rootNodes = await request()
+              this.setState({
+                  ...nextState,
+                  isRoot:true,
+                  nodes:rootNodes
+              })
+          } else {
+              const prevNodes = await request(prevNodeId)
+
+              this.setState({
+                  ...nextState,
+                  isRoot:false,
+                  nodes:prevNodes
+              })
+          }
+      } catch(e) {
+          throw new Error(e)
+      }
+  }
 
   const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
 
@@ -82,6 +107,7 @@ function App($app) {
     $app,
     initialState: { isRoot: this.state.isRoot, nodes: this.state.nodes },
     onClick,
+    onBackClick
   });
 
   const imageViewer = new ImageViewer({
@@ -117,7 +143,7 @@ function App($app) {
   this.init();
 }
 
-function Nodes({ $app, initialState, onClick }) {
+function Nodes({ $app, initialState, onClick, onBackClick }) {
 
     
   // Nodes의 컴포넌트는 상태를 가지고
@@ -125,6 +151,7 @@ function Nodes({ $app, initialState, onClick }) {
 
   // 컴포넌트간 조율하는 콜백함수
   this.onClick = onClick;
+  this.onBackClick = onBackClick
 
   // 가장 기본이되는 컴포넌트 가장위를 만듬
   this.$target = document.createElement("div");
@@ -157,7 +184,14 @@ function Nodes({ $app, initialState, onClick }) {
     }
     
     this.$target.addEventListener("click", (e) => {
+        // 2번씩 눌리는 현상??
+        // console.log(e.target)
           const { index } = e.target.dataset;
+        
+          if(!index) {
+              this.onBackClick()
+          }
+
           const select = this.state.nodes.find((node) => node.id === index);
         
           if (select) {
