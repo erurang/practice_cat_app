@@ -52,7 +52,6 @@ function App($app) {
   // ==== > 근데 그냥 계속누르면 계속 네트워크 요청이날라감
   // -> 이걸방지하려면?
   const onClick = async (node) => {
-
     try {
         if (node.type === "DIRECTORY") {
             const nextNodes = await request(node.id)
@@ -199,23 +198,32 @@ function Nodes({ $app, initialState, onClick, onBackClick }) {
         ? `<div class="Node><img src="./assets/prev.png></div> ${nodeTemplate}`
         : nodeTemplate;
     }
-    
-    this.$target.addEventListener("click", (e) => {
-        // 2번씩 눌리는 현상??
-        // console.log(e.target)
-          const { index } = e.target.dataset;
-        
-          if(!index) {
-              this.onBackClick()
-          }
-
-          const select = this.state.nodes.find((node) => node.id === index);
-        
-          if (select) {
-            this.onClick(select);
-          }
-        });
   };
+
+  this.$target.addEventListener("click", (e) => {
+      
+    const $node = e.target.closest('.Node')
+
+    console.log($node)
+    
+    
+    if($node) {
+
+        const { index } = $node.dataset
+
+        if(!index) {
+            this.onBackClick()
+            return
+        }
+
+        const select = this.state.nodes.find((node) => node.id === index);
+      
+        if (select) {
+          this.onClick(select);
+          return
+        }
+    }
+    });
 
   this.render();
 }
