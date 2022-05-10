@@ -44,7 +44,8 @@ function App($app) {
     isRoot: false,
     nodes: [],
     depth: [],
-    selectedFilePath : null
+    selectedFilePath : null,
+    loading: false
   };
 
   // node에 파일을 클릭했을때 api로 새 파일을 불러와서 세팅함.
@@ -115,6 +116,11 @@ function App($app) {
       initialState : this.state.selectedFilePath
   })
 
+  const loading = new Loading({
+      $app,
+      initialState : this.state.loading
+  })
+
   //app 에도 상태관리를위해 setState함수 설정
   this.setState = (nextState) => {
 
@@ -122,12 +128,18 @@ function App($app) {
     breadcrumb.setState(this.state.depth);
     nodes.setState({ isRoot: this.state.isRoot, nodes : this.state.nodes});
     imageViewer.setState(this.state.selectedFilePath)
+    loading.setState(this.state.loading)
   };
 
   // 초기 데이터 셋팅
 
   this.init = async () => {
     try {
+        this.setState({
+            ...this.state,
+            loading:true
+        })
+
       const rootNodes = await request();
 
       this.setState({
@@ -137,6 +149,11 @@ function App($app) {
       });
     } catch (e) {
       throw new Error(e);
+    } finally {
+        this.setState({
+            ...this.state,
+            loading:false
+        })
     }
   };
 
@@ -245,6 +262,27 @@ function ImageViewer({ $app, initialState }) {
         this.$target.innerHTML = `<div class="content">${this.state ? `<img src="${IMAGE_PATH_PREFIX}${this.state}"` : ""}</div>`
 
         this.$target.style.display = this.state ? 'block' : 'none'
+    }
+
+    this.render()
+}
+
+function Loading({$app,initialState}) {
+    this.state = initialState
+    this.$target = document.createElement('div')
+    this.$target.className = 'Modal Loading'
+    
+    $app.appendChild(this.$target)
+
+    this.setState = (nextState) => {
+        this.state = nextState
+        this.render()
+    }
+
+    this.render = () => {
+        this.$target.innerHTML = `<div class="content"><img src="./assets/nyan-cat.gif"></div>`
+
+        this.$target.style.display = this.state ? "block" : "none"
     }
 
     this.render()
