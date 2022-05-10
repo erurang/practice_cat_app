@@ -4,12 +4,14 @@
 const API_END_POINT =
   "https://zl3m4qq0l9.execute-api.ap-northeast-2.amazonaws.com/dev/";
 
-async function request() {
+const IMAGE_PATH_PREFIX = 'https://fe-dev-matching-2021-03-serverlessdeploymentbuck-t3kpj3way537.s3.ap-northeast-2.amazonaws.com/public'
+
+async function request(nodeId) {
   // fetch로 반환되는  promise 객체는 http Error상태를 reject 해주지않기때문에. 즉 네트워크 요청에 오류가생겨도 catch에 걸리지 않는다는뜻.
   //  response.ok로 파악해야함
   try {
     const data = await fetch(
-      "https://zl3m4qq0l9.execute-api.ap-northeast-2.amazonaws.com/dev/"
+      `${API_END_POINT}${nodeId ? nodeId : ''}`
     );
 
     if (!data.ok) {
@@ -42,14 +44,36 @@ function App($app) {
     isRoot: false,
     nodes: [],
     depth: [],
+    selectedFilePath : null
   };
 
-  const onClick = (node) => {
-    console.log(node)
-    if (node.type === "DIRECTORY") {
-        
-    } else if (node.type === "FILE") {
+  // node에 파일을 클릭했을때 api로 새 파일을 불러와서 세팅함.
+  // ==== > 근데 그냥 계속누르면 계속 네트워크 요청이날라감
+  // -> 이걸방지하려면?
+  const onClick = async (node) => {
+
+    try {
+        if (node.type === "DIRECTORY") {
+            const nextNodes = await request(node.id)
+            
+            this.setState({
+                ...this.state,
+                depth : [...this.state.depth, node],
+                nodes : nextNodes
+            })
+
+        } else if (node.type === "FILE") {
+            this.setState({
+                ...this.state,
+                selectedFilePath : node.filePath
+            })
+        }
+    } catch(e) {
+        throw new Error(e)
     }
+
+    
+    
   };
 
   const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
@@ -60,12 +84,18 @@ function App($app) {
     onClick,
   });
 
+  const imageViewer = new ImageViewer({
+      $app,
+      initialState : this.state.selectedFilePath
+  })
+
   //app 에도 상태관리를위해 setState함수 설정
   this.setState = (nextState) => {
 
     this.state = nextState;
     breadcrumb.setState(this.state.depth);
     nodes.setState({ isRoot: this.state.isRoot, nodes : this.state.nodes});
+    imageViewer.setState(this.state.selectedFilePath)
   };
 
   // 초기 데이터 셋팅
@@ -109,15 +139,15 @@ function Nodes({ $app, initialState, onClick }) {
   };
 
   this.render = () => {
-    console.log(this.state)
+    // console.log(this.state)
     if (this.state.nodes) {    
       const nodeTemplate = this.state.nodes
-        .map((node, index) => {
+        .map((node) => {
           const iconPath =
             node.type === "FILE"
               ? "./assets/file.png"
               : "./assets/directory.png";
-          return `<div class="Node" data-index="${index}"><img src="${iconPath}"><div>${node.name}</div></div>`;
+          return `<div class="Node" data-index="${node.id}"><img src="${iconPath}"><div>${node.name}</div></div>`;
         })
         .join("");
 
@@ -125,19 +155,15 @@ function Nodes({ $app, initialState, onClick }) {
         ? `<div class="Node><img src="./assets/prev.png></div> ${nodeTemplate}`
         : nodeTemplate;
     }
-
-    this.$target.querySelectorAll(".Node").forEach(($node) => {
-      console.log($node.dataset);
-      $node.addEventListener("click", (e) => {
-        const { index } = e.target.dataset;
-
-        const selectIndex = this.state.nodes.find((node) => node.id === index);
-
-        if (selectIndex) {
-          this.onClick(selectedNode);
-        }
-      });
-    });
+    
+    this.$target.addEventListener("click", (e) => {
+          const { index } = e.target.dataset;
+          const select = this.state.nodes.find((node) => node.id === index);
+        
+          if (select) {
+            this.onClick(select);
+          }
+        });
   };
 
   this.render();
@@ -168,5 +194,27 @@ function Breadcrumb({ $app, initialState }) {
 
   this.render();
 }
+
+function ImageViewer({ $app, initialState }) {
+    this.state = initialState
+    this.$target = document.createElement('div')
+    this.$target.className = 'Modal ImageViewer'
+
+    $app.appendChild(this.$target)
+
+    this.setState =(nextState) => {
+        this.state = nextState
+        this.render()
+    }
+
+    this.render = () => {
+        this.$target.innerHTML = `<div class="content">${this.state ? `<img src="${IMAGE_PATH_PREFIX}${this.state}"` : ""}</div>`
+
+        this.$target.style.display = this.state ? 'block' : 'none'
+    }
+
+    this.render()
+}
+
 
 new App(document.querySelector(".app"));
