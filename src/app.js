@@ -4,6 +4,7 @@ import Loading from "./loading.js"
 import ImageViewer from "./imageViwer.js"
 import { request } from "./api.js"
 
+const cache = {}
 
 export default function App($app) {
     this.state = {
@@ -17,13 +18,25 @@ export default function App($app) {
       try {
         this.setState({ ...this.state, loading: true });
         if (node.type === "DIRECTORY") {
-          const nextNodes = await request(node.id);
+            if(cache[node.id]) {
+                this.setState({
+                    ...this.state,
+                    depth : [...this.state.depth,node],
+                    nodes:cache[node.id]
+                })
+            } else {
+                const nextNodes = await request(node.id);
   
-          this.setState({
-            ...this.state,
-            depth: [...this.state.depth, node],
-            nodes: nextNodes,
-          });
+                this.setState({
+                ...this.state,
+                depth: [...this.state.depth, node],
+                nodes: nextNodes,
+                });
+
+                cache[node.id] = nextNodes
+            }
+
+          
         } else if (node.type === "FILE") {
           this.setState({
             ...this.state,
@@ -49,19 +62,19 @@ export default function App($app) {
             : nextState.depth[nextState.depth.length - 1].id;
   
         if (prevNodeId === null) {
-          const rootNodes = await request();
+        //   const rootNodes = await request();
           this.setState({
             ...nextState,
             isRoot: true,
-            nodes: rootNodes,
+            nodes: cache.root,
           });
         } else {
-          const prevNodes = await request(prevNodeId);
+        //   const prevNodes = await request(prevNodeId);
   
           this.setState({
             ...nextState,
             isRoot: false,
-            nodes: prevNodes,
+            nodes: cache[prevNodeId],
           });
         }
       } catch (e) {
@@ -112,6 +125,8 @@ export default function App($app) {
         });
   
         const rootNodes = await request();
+
+        cache.root = rootNodes
   
         this.setState({
           ...this.state,
