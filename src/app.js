@@ -85,8 +85,17 @@ export default function App($app,cache) {
     const onFileClick = () => {
         this.setState({...this.state,selectedFilePath:null})
     }
+    
+    const onPathClick = (nodeId) => {
+        if(nodeId === 'root') {
+            this.setState({...this.state, isRoot: true, nodes : cache.root, depth: []})
+        } else {
+            const index = this.state.depth.findIndex(depth => depth.id === nodeId)
+            this.setState({...this.state, isRoot: false, nodes : cache[nodeId], depth : this.state.depth.slice(0,index+1) })
+        }
+    }
   
-    const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
+    const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth,onPathClick });
   
     const nodes = new Nodes({
       $app,
