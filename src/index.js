@@ -53,6 +53,7 @@ function App($app) {
   // -> 이걸방지하려면?
   const onClick = async (node) => {
     try {
+        this.setState({...this.state, loading:true})
         if (node.type === "DIRECTORY") {
             const nextNodes = await request(node.id)
             
@@ -62,6 +63,7 @@ function App($app) {
                 nodes : nextNodes
             })
 
+
         } else if (node.type === "FILE") {
             this.setState({
                 ...this.state,
@@ -70,15 +72,18 @@ function App($app) {
         }
     } catch(e) {
         throw new Error(e)
+    } finally {
+        this.setState({...this.state, loading:false})
     }
   };
 
   const onBackClick = async () => {
       try {
+        this.setState({...this.state, loading:true})
           const nextState = {...this.state}
           nextState.depth.pop()
 
-          const prevNodeId = nextState.depth.length === 0 ? null : nextState.depth[nextState.depth-1].id
+          const prevNodeId = nextState.depth.length === 0 ? null : nextState.depth[nextState.depth.length-1].id
 
           if(prevNodeId === null) {
               const rootNodes = await request()
@@ -98,7 +103,9 @@ function App($app) {
           }
       } catch(e) {
           throw new Error(e)
-      }
+      }finally {
+        this.setState({...this.state, loading:false})
+    }
   }
 
   const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
@@ -125,7 +132,7 @@ function App($app) {
 
     this.state = nextState;
     breadcrumb.setState(this.state.depth);
-    nodes.setState({ isRoot: this.state.isRoot, nodes : this.state.nodes});
+    nodes.setState({ isRoot: this.state.depth.length === 0 ? true : false, nodes : this.state.nodes});
     imageViewer.setState(this.state.selectedFilePath)
     loading.setState(this.state.loading)
   };
@@ -160,7 +167,7 @@ function App($app) {
 }
 
 function Nodes({ $app, initialState, onClick, onBackClick }) {
-
+    
     
   // Nodes의 컴포넌트는 상태를 가지고
   this.state = initialState;
@@ -182,7 +189,6 @@ function Nodes({ $app, initialState, onClick, onBackClick }) {
   };
 
   this.render = () => {
-    // console.log(this.state)
     if (this.state.nodes) {    
       const nodeTemplate = this.state.nodes
         .map((node) => {
@@ -195,13 +201,13 @@ function Nodes({ $app, initialState, onClick, onBackClick }) {
         .join("");
 
       this.$target.innerHTML = !this.state.isRoot
-        ? `<div class="Node><img src="./assets/prev.png></div> ${nodeTemplate}`
+        ? `<div class="Node"><img src="./assets/prev.png"></div> ${nodeTemplate}`
         : nodeTemplate;
     }
   };
 
   this.$target.addEventListener("click", (e) => {
-      
+
     const $node = e.target.closest('.Node')
 
     console.log($node)
