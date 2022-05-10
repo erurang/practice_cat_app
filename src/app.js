@@ -4,9 +4,7 @@ import Loading from "./loading.js"
 import ImageViewer from "./imageViwer.js"
 import { request } from "./api.js"
 
-const cache = {}
-
-export default function App($app) {
+export default function App($app,cache) {
     this.state = {
       isRoot: false,
       nodes: [],
@@ -83,6 +81,10 @@ export default function App($app) {
         this.setState({ ...this.state, loading: false });
       }
     };
+
+    const onFileClick = () => {
+        this.setState({...this.state,selectedFilePath:null})
+    }
   
     const breadcrumb = new Breadcrumb({ $app, initialState: this.state.depth });
   
@@ -96,6 +98,7 @@ export default function App($app) {
     const imageViewer = new ImageViewer({
       $app,
       initialState: this.state.selectedFilePath,
+      onFileClick
     });
   
     const loading = new Loading({
